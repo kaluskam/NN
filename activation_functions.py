@@ -33,4 +33,4 @@ class Softmax(ActivationFunction):
         return np.exp(x) / np.sum(np.exp(x))
 
     def derivative(self, x):
-        pass
+        return 1
