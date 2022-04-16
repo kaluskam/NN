@@ -5,14 +5,14 @@ from sklearn.preprocessing import OneHotEncoder
 DATA_PATH = 'data'
 
 
-def read_regression_data(dataset_name):
+def read_regression_data(dataset_name, index_col=0):
     train_path = os.path.join(DATA_PATH, 'regression',
                               f'{dataset_name}-training.csv')
     test_path = os.path.join(DATA_PATH, 'regression',
                              f'{dataset_name}-test.csv')
     
-    train_df = pd.read_csv(train_path, index_col=0)
-    test_df = pd.read_csv(test_path, index_col=0)
+    train_df = pd.read_csv(train_path, index_col=index_col)
+    test_df = pd.read_csv(test_path, index_col=index_col)
     
     n_train = len(train_df)
     x_train = np.reshape(np.array(train_df.x), (n_train, 1))

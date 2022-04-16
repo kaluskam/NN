@@ -175,15 +175,19 @@ class NN:
         metric_name = self.metric.__name__
         print(f'Loss on training set: '
               f'{self.loss(self.y_train, self.predict(self.x_train))}',
-              end=' ')
-        print(f'{metric_name} on training set: '
-              f'{self.metric(self.y_train, self.predict(self.x_train))}', end='')
+              end='')
+        if metric_name != self.loss.__name__:
+            print(f' {metric_name} on training set: '
+                  f'{self.metric(self.y_train, self.predict(self.x_train))}', end='')
         if self.x_test is not None:
             print(f', loss on test set: '
                   f'{self.loss(self.y_test, self.predict(self.x_test))}',
-                  end=' ')
-            print(f'{metric_name} on test set: '
-                  f'{self.metric(self.y_test, self.predict(self.x_test))}')
+                  end='')
+            if metric_name != self.loss.__name__:
+                print(f' {metric_name} on test set: '
+                      f'{self.metric(self.y_test, self.predict(self.x_test))}')
+            else:
+                print()
 
     def generate_batches(self):
         np.random.shuffle(self.indices)

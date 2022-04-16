@@ -31,7 +31,7 @@ class Softmax(ActivationFunction):
 
     def calculate(self, x):
         if x.shape[1] == 1:
-            return np.exp(x) / np.sum(np.exp(x))
+            return np.exp(x - np.max(x)) / np.sum(np.exp(x - np.max(x)))
         if x.shape[1] > 1:
             return np.exp(x) / (np.sum(np.exp(x), axis=1).reshape(
                 (x.shape[0], 1)) @ np.ones((1, x.shape[1])))

@@ -11,9 +11,8 @@ def mse(y_true, y_pred):
 def cross_entropy(y_true, y_pred):
     y_pred = np.reshape(y_pred, newshape=y_true.shape)
     eps = 0.00000001
-    assert y_pred.all() != 0
     return np.mean(
-        np.where(y_true == 1, -np.log(y_pred), -np.log(1 - y_pred + eps)))
+        np.where(y_true == 1, -np.log(y_pred + eps), -np.log(1 - y_pred + eps)))
 
 
 def cross_entropy_derivative(y_true, y_pred):
