@@ -11,13 +11,12 @@ class Layer:
         self.weighted_input = None
         self.output = None
 
-    def _initialize_weights(self, min_val=-0.5, max_val=0.5):
+    def _initialize_weights(self, min_val=-1, max_val=1):
         self.weights = np.random.uniform(min_val, max_val, size=self.shape)
         self.biases = np.random.uniform(min_val, max_val, size=(self.shape[1], 1))
 
     def calculate(self, x):
-        x = np.expand_dims(x, axis=0)
-        self.weighted_input = (x @ self.weights) + self.biases
+        self.weighted_input = (self.weights.T @ x) + self.biases
 
         return self.weighted_input
 

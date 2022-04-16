@@ -87,3 +87,47 @@ def test_classification_error_calculation():
     assert np.allclose(deltas['weights'][1], np.array([[-0.25732949,  0.25732949],
        [-0.69949407,  0.69949407],
        [-0.91144537,  0.91144537]]))
+
+
+def test_network_creation():
+    for function in [Sigmoid(), Softmax(), Linear()]:
+        nn = NN(input_shape=[1, 2], neurons_num=[5, 2],
+                activations=[Sigmoid(), function])
+        assert nn.layers[0].weights.shape == (2, 5)
+        assert nn.layers[1].weights.shape == (5, 2)
+        assert nn.layers[0].biases.shape == (5, 1)
+        assert nn.layers[1].biases.shape == (2, 1)
+
+
+def test_errors():
+    y_true = np.ones((2, 1))
+    x = np.ones((2, 1))
+    for function in [Sigmoid(), Softmax(), Linear()]:
+        print('testing for: ', function.__class__)
+        nn = NN(input_shape=[1, 2], neurons_num=[5, 2],
+                activations=[Sigmoid(), function])
+        nn.predict(x)
+        errors = nn.calculate_errors(y_true)
+        assert len(errors) == 2
+
+        assert errors[0].shape == (5, 1)
+        assert errors[1].shape == (2, 1)
+
+
+def test_propagate_backwards():
+    y_true = np.ones((2, 1))
+    x = np.ones((2, 1))
+    for function in [Sigmoid(), Softmax(), Linear()]:
+        print('testing for: ', function.__class__)
+        nn = NN(input_shape=[1, 2], neurons_num=[5, 2],
+                activations=[Sigmoid(), function])
+        nn.predict(x)
+        deltas = nn.propagate_backwards(y_true, x)
+        assert len(deltas['weights']) == 2
+        assert len(deltas['biases']) == 2
+
+        assert deltas['weights'][0].shape == (2, 5)
+        assert deltas['weights'][1].shape == (5, 2)
+
+        assert deltas['biases'][0].shape == (5, 1)
+        assert deltas['biases'][1].shape == (2, 1)
