@@ -17,6 +17,7 @@ class NN:
         self.layers_num = len(neurons_num)
         self.neurons_num = neurons_num
         self.activations = activations
+        self.history = {'loss_train': [], 'loss_test': [], 'metric_train': [], 'metric_test': []}
         np.random.seed(seed)
         self._build()
 
@@ -33,24 +34,7 @@ class NN:
                 activation=self.activations[i])
             self.layers.append(layer)
 
-    # def feed_forward(self, x):
-    #     self.recent_calculations = []
-    #     self.recent_calculations.append(x)
-    #
-    #     x = self.layers[0].calculate(x)
-    #     self.recent_calculations.append(x)
-    #     x = self.layers[0].activate(x)
-    #
-    #     for i in range(1, self.layers_num):
-    #         x = self.layers[i].calculate(x)
-    #         self.recent_calculations.append(x)
-    #         x = self.layers[i].activate(x)
-    #
-    #     return x
-
     def calculate_errors(self, y_true):
-        # y_true = np.expand_dims(y_true, axis=1)
-        # y_pred = np.expand_dims(y_pred, axis=1)
         errors = []
         last_error = self.layers[-1].output - y_true
         last_derivative = self.layers[-1].activation.derivative(
@@ -68,41 +52,10 @@ class NN:
         errors.reverse()
         return errors
 
-    # def calculate_errors(self, y_true, y_pred):
-    #     errors = []
-    #     for i in range(self.layers_num - 1, -1, -1):
-    #         layer = self.layers[i]
-    #         if isinstance(layer.activation, Softmax):
-    #             pass
-    #             # derivative = np.reshape(
-    #             #     cross_entropy_derivative(y_true, y_pred), (1, 1))
-    #         else:
-    #             derivative = layer.activation.derivative(
-    #                 self.recent_calculations[i + 1].reshape(layer.shape[-1],
-    #                                                         1))
-    #
-    #         if i == self.layers_num - 1:
-    #             if self.loss.__name__ == 'mse':
-    #                 errors.append(np.multiply((y_pred - y_true), derivative)
-    #                               .reshape(1, y_true.shape[-1]).squeeze())
-    #             if self.loss.__name__ == 'cross_entropy':
-    #                 softmax_output = Softmax().calculate(self.recent_calculations[-1])
-    #                 errors.append((softmax_output - y_true)
-    #                               .reshape(1, y_true.shape[-1]).squeeze())
-    #         else:
-    #             errors.append(np.multiply(derivative.squeeze(),
-    #                                       np.dot(self.layers[i + 1].weights,
-    #                                              errors[
-    #                                                  -1]).squeeze()).squeeze())
-    #     errors.reverse()
-    #     return errors
-
     def propagate_backwards(self, y_true, x):
         delta = {'weights': [], 'biases': []}
 
         errors = self.calculate_errors(y_true)
-        # delta['weights'].insert(0, -self.layers[-2].output @ errors[-1].T)
-        # delta['biases'].insert(0, -errors[-1])
 
         for i in range(self.layers_num - 1, 0, -1):
             delta['weights'].insert(0,
@@ -114,27 +67,22 @@ class NN:
         delta['biases'].insert(0, -errors[0])
         return delta
 
-    # def propagate_backwards(self, y_true, y_pred, x):
-    #     delta = {'weights': [], 'biases': []}
-    #
-    #     errors = self.calculate_errors(y_true, y_pred)
-    #     for i in range(self.layers_num - 1, 0, -1):
-    #         a = self.layers[i - 1].activate(
-    #             self.recent_calculations[i].reshape(
-    #                 self.layers[i - 1].shape[-1], 1))
-    #         delta['weights'].insert(0,
-    #                                 np.outer(a, errors[i]) / self.batch_size)
-    #         # delta['weights'].insert(0,
-    #         #                         errors[i].dot(a) / self.batch_size)
-    #         delta['biases'].insert(0, (errors[i] / self.batch_size).reshape(-1, 1))
-    #
-    #     a = self.layers[0].activate(
-    #         self.recent_calculations[0].reshape(
-    #             x.shape[-1], 1))
-    #     delta['weights'].insert(0, np.outer(a, errors[0]) / self.batch_size)
-    #     delta['biases'].insert(0, (errors[0] / self.batch_size).reshape(-1, 1))
-    #
-    #     return delta
+    def propagate_backwards_with_regularization(self, y_true, x, lambd=0.05):
+        delta = {'weights': [], 'biases': []}
+
+        errors = self.calculate_errors(y_true)
+
+        for i in range(self.layers_num - 1, 0, -1):
+            l2 = lambd * self.layers[i].weights
+            delta['weights'].insert(0,
+                                    -self.layers[i - 1].output @ errors[i].T - l2)
+            delta['biases'].insert(0, -errors[i])
+
+        l2 = lambd * self.layers[0].weights
+        delta['weights'].insert(0,
+                               -x @ errors[0].T - l2)
+        delta['biases'].insert(0, -errors[0])
+        return delta
 
     def convert_to_numpy_array(self, x_train, y_train, x_test, y_test):
         if x_test is None or y_test is None:
@@ -189,17 +137,21 @@ class NN:
             else:
                 print()
 
+    def update_history(self):
+        self.history['loss_train'].append(self.loss(self.y_train, self.predict(self.x_train)))
+        self.history['loss_test'].append(self.loss(self.y_test, self.predict(self.x_test)))
+        self.history['metric_train'].append(self.metric(self.y_train, self.predict(self.x_train)))
+        self.history['metric_test'].append(self.metric(self.y_test, self.predict(self.x_test)))
+
     def generate_batches(self):
         np.random.shuffle(self.indices)
         indices_permutation = np.split(self.indices,
                                        [i * self.batch_size for i in
                                        range(1, self.n // self.batch_size)])
         return indices_permutation
-        # self.batches = {'x': self.x_train[indices_permutation],
-        #                 'y': self.y_train[indices_permutation]}
 
     def fit(self, x_train, y_train, batch_size, n_epochs, learning_rate=0.003,
-            x_test=None, y_test=None, loss=None, metric=None, verbose_step=10):
+            x_test=None, y_test=None, loss=None, metric=None, verbose_step=10, regularization_rate=0.5):
 
         self.x_train, self.y_train, self.x_test, self.y_test = self.convert_to_numpy_array(
             x_train, y_train, x_test, y_test)
@@ -211,11 +163,11 @@ class NN:
         self.loss = loss
         self.metric = metric
 
+
         epoch = 1
         while epoch <= self.n_epochs:
             batches = self.generate_batches()
 
-            #for x_batch, y_batch in zip(self.batches['x'], self.batches['y']):
             for batch in batches:
                 self.delta_weights = self.initialize_dict()
                 for j in range(self.batch_size):
@@ -224,16 +176,17 @@ class NN:
                     y = y_train[idx]
                     self.propagate_forward(np.reshape(x, (-1, 1)))
 
-                    delta = self.propagate_backwards(
+                    delta = self.propagate_backwards_with_regularization(
                         y_true=np.reshape(y, (-1, 1)),
-                        x=np.reshape(x, (-1, 1)))
+                        x=np.reshape(x, (-1, 1)),
+                        lambd=regularization_rate)
 
                     self.delta_weights = self.sum_dicts(
                         dict1=self.delta_weights, dict2=delta,
-                        dict2_multiplier=self.learning_rate)
+                        dict2_multiplier=self.learning_rate / self.batch_size)
 
                 self.update_layers()
-
+            self.update_history()
             if epoch % verbose_step == 0:
                 self.print_results(epoch)
             epoch += 1

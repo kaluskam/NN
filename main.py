@@ -3,15 +3,18 @@ from activation_functions import Sigmoid, Linear, Softmax, ReLU, Tanh
 from prepare_data import read_regression_data, read_classification_data
 from metrics import mse, cross_entropy, f_score
 
-x_train, y_train, x_test, y_test = read_classification_data(
-    dataset_name='easy')
+# x_train, y_train, x_test, y_test = read_classification_data(
+#     dataset_name='easy')
 
-# x_train, y_train, x_test, y_test = read_regression_data(
-#     dataset_name='square-simple')
+x_train, y_train, x_test, y_test = read_regression_data(
+    dataset_name='multimodal-large', index_col=None)
 
-nn = NN(input_shape=x_train.shape, neurons_num=[32, 32, 2],
-        activations=[ReLU(), ReLU(), Softmax()], seed=42)
+architecture1 = [32, 1]
+architecture2 = [40, 40, 1]
+architecture3 = [32, 32, 16, 1]
 
-nn.fit(x_train, y_train, batch_size=8, n_epochs=40,
-       learning_rate=0.0001,
-       x_test=x_test, y_test=y_test, loss=cross_entropy, metric=f_score)
+nn = NN(input_shape=x_train.shape, neurons_num=architecture1,
+        activations=[ReLU(), Linear()])
+
+nn.fit(x_train, y_train, batch_size=4, n_epochs=80, learning_rate=0.0001, loss=mse, metric=mse, x_test=x_test, y_test=y_test, verbose_step=10)
+#nn.fit(x_train, y_train, batch_size=4, n_epochs=100, learning_rate=0.00005, loss=mse, metric=mse, x_test=x_test, y_test=y_test, verbose_step=10)
